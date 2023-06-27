@@ -71,10 +71,11 @@ def get_esgf_data(variable, experiment, ensemble_member):
   return ds[variable]
 
 if __name__ == '__main__':
-    #cluster = LocalCluster(n_workers=4, processes=True, diagnostics_port=None, scheduler_port=0, silence_logs=10, worker_dashboard_address=':0', dashboard_address=':0', threads_per_worker=1)
-    #print(cluster)
-    #client = Client(cluster, worker_dashboard_address=':0', dashboard_address=':0', local_directory='/tmp')
-    #print(client)
+    cluster = LocalCluster(n_workers=4, processes=True, diagnostics_port=None, scheduler_port=0, silence_logs=10, worker_dashboard_address=':0', dashboard_address=':0', threads_per_worker=1)
+    print(cluster)
+    # client = Client(cluster, worker_dashboard_address=':0', dashboard_address=':0', local_directory='/tmp')
+    client = Client(cluster)
+    print(client)
     print("starting")
     # Cache the full catalogue from NorESG
     full_catalog = catalog.TDSCatalog('http://noresg.nird.sigma2.no/thredds/catalog/esgcet/catalog.xml')
@@ -96,7 +97,9 @@ if __name__ == '__main__':
           tasmin = get_esgf_data('tasmin', experiment, member)
           tasmax = get_esgf_data('tasmax', experiment, member)
           tas = get_esgf_data('tas', experiment, member)
-          pr = get_esgf_data('pr', experiment, member).persist()  # Since we need to process it twice
+          pr = get_esgf_data('pr', experiment, member).persist()
+          #.persist()  # Since we need to process it twice
+          # pr1 = get_esgf_data('pr', experiment, member)
         except IndexError:
           print("Skipping this realisation as no data present")
           continue
@@ -107,5 +110,5 @@ if __name__ == '__main__':
                          'tas': tas.groupby('time.year').mean('time'),
                          'pr': pr.groupby('time.year').mean('time'),
                          'pr90': pr.groupby('time.year').quantile(0.9, skipna=True)})
-        ds.to_netcdf(f"{model}_{experiment}_{member}.nc")
+        ds.to_netcdf(f"/home/gclyne/scratch/{model}_{experiment}_{member}.nc")
 
