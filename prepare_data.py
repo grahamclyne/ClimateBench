@@ -93,9 +93,10 @@ def esgf_search(server="https://esgf-node.llnl.gov/esg-search/search",
                 if sp[-1] == files_type:
                     all_files.append(sp[0].split(".html")[0])
         print(len(all_files))
+    print(all_files)
     if(all_files == []):
        raise IndexError
-    ds = xr.open_mfdataset(all_files, combine='by_coords')
+    ds = xr.open_mfdataset(all_files, combine='by_coords',engine='netcdf4')
     return ds[search['variable_id']]
 
 # def get_esgf_data(variable, experiment, ensemble_member):
@@ -126,7 +127,7 @@ def esgf_search(server="https://esgf-node.llnl.gov/esg-search/search",
 #   return ds[variable]
 
 if __name__ == '__main__':
-    xr.set_options(file_cache_maxsize=10)
+    xr.set_options(file_cache_maxsize=10,warn_for_unclosed_files=True)
 # https://github.com/pydata/xarray/issues/4082#issuecomment-639111588
 
 
@@ -138,6 +139,7 @@ if __name__ == '__main__':
     # client = Client(cluster)
     # print(client)
     # print("starting")
+
     # Cache the full catalogue from NorESG
     # full_catalog = catalog.TDSCatalog('http://noresg.nird.sigma2.no/thredds/catalog/esgcet/catalog.xml')
     # print("Read full catalogue")
