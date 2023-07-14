@@ -158,6 +158,7 @@ if __name__ == '__main__':
     #client = Client(cluster)
     # print(client)
     # print("starting")
+
     # Cache the full catalogue from NorESG
     # full_catalog = catalog.TDSCatalog('http://noresg.nird.sigma2.no/thredds/catalog/esgcet/catalog.xml')
     # print("Read full catalogue")
