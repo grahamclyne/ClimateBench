@@ -6,9 +6,10 @@ Prepare the NorESM2 output by getting it directly from the http://noresg.nird.si
 # from siphon import catalogs
 import pandas as pd
 import xarray as xr
-from dask.distributed import Client, LocalCluster
+# from dask.distributed import Client, LocalCluster
 import os.path
 import requests
+#import h5pyd
 overwrite = False
 
 model = 'NorESM2-LM'
@@ -47,6 +48,7 @@ def esgf_search(server="https://esgf-node.llnl.gov/esg-search/search",
                 files_type="OPENDAP", local_node=True, project="CMIP6",
                 verbose=False, format="application%2Fsolr%2Bjson",
                 use_csrf=False, **search):
+    x2 = xr.Dataset()
     client = requests.session()
     payload = search
     payload["project"] = project
@@ -91,12 +93,30 @@ def esgf_search(server="https://esgf-node.llnl.gov/esg-search/search",
             for f in d["url"]:
                 sp = f.split("|")
                 if sp[-1] == files_type:
+                    file = sp[0].split('.html')[0]
+                    # print(file)
                     all_files.append(sp[0].split(".html")[0])
-        print(len(all_files))
+                    #x1 = xr.open_dataset(sp[0].split('.html')[0])
+                    #x2 = xr.combine_by_coords([x1,x2],combine_attrs='drop')
+        # print(len(all_files))
     if(all_files == []):
        raise IndexError
-    ds = xr.open_mfdataset(all_files, combine='by_coords')
-    return ds[search['variable_id']]
+    # ds_fin = xr.Dataset()
+    # for i in range(10,len(all_files)):
+    #   print(all_files[:i])
+    #   ds = xr.open_mfdataset(all_files[:i], combine='by_coords',engine='netcdf4',chunks={'time':1},cache=False).reset_coords(drop=True)
+    #   i = i + 10
+    #   ds_fin = xr.combine_by_coords([ds,ds_fin],combine_attrs='drop')
+    #   print(ds_fin)
+    # for f in all_files:
+      # xr.open_dataset(f).to_netcdf(f'~/scratch/{f.split("/")[-1]}')
+    data = [xr.open_dataset(f).reset_coords(drop=True).chunk({'time':365}) for f in all_files]
+    ds_out = xr.combine_by_coords(data,combine_attrs='drop')
+    # ds = xr.open_mfdataset(all_files,combine='by_coords',chunks={'time':1},engine='netcdf4')
+    out = ds_out[search['variable_id']]
+    return out
+    #ds.close()
+    #return x2[search['variable_id']]
 
 # def get_esgf_data(variable, experiment, ensemble_member):
 #   """
@@ -126,16 +146,16 @@ def esgf_search(server="https://esgf-node.llnl.gov/esg-search/search",
 #   return ds[variable]
 
 if __name__ == '__main__':
-    xr.set_options(file_cache_maxsize=10)
+    xr.set_options(file_cache_maxsize=10  ,warn_for_unclosed_files=True)
 # https://github.com/pydata/xarray/issues/4082#issuecomment-639111588
 
 
 
 
-    # cluster = LocalCluster(n_workers=4, silence_logs=10,threads_per_worker=1)
-    # print(cluster)
+    #cluster = LocalCluster(n_workers=4, silence_logs=10,threads_per_worker=1)
+    #print(cluster)
     # # client = Client(cluster, worker_dashboard_address=':0', dashboard_address=':0', local_directory='/tmp')
-    # client = Client(cluster)
+    #client = Client(cluster)
     # print(client)
     # print("starting")
     # Cache the full catalogue from NorESG
